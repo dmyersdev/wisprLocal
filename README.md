@@ -58,6 +58,38 @@ Built app path:
 ./.derived/Build/Products/Release/WisprLocal.app
 ```
 
+## Run As Executable (Terminal)
+
+The app bundle contains a native executable at:
+
+```text
+./.derived/Build/Products/Release/WisprLocal.app/Contents/MacOS/WisprLocal
+```
+
+Run it directly:
+
+```bash
+./.derived/Build/Products/Release/WisprLocal.app/Contents/MacOS/WisprLocal
+```
+
+If your shell says permission denied, make it executable:
+
+```bash
+chmod +x ./.derived/Build/Products/Release/WisprLocal.app/Contents/MacOS/WisprLocal
+```
+
+Or launch the app bundle like a normal macOS app:
+
+```bash
+open ./.derived/Build/Products/Release/WisprLocal.app
+```
+
+If macOS blocks launch because the app is downloaded/unsigned:
+
+```bash
+xattr -dr com.apple.quarantine ./.derived/Build/Products/Release/WisprLocal.app
+```
+
 ## Download Options
 
 ### 1) Download a prebuilt app (if a release exists)
