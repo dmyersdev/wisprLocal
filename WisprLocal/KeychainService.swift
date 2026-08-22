@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-final class KeychainService {
+final class KeychainService: APIKeyStoring {
     static let shared = KeychainService()
 
     private let service = "com.wisprlocal.openai"

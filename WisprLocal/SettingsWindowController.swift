@@ -6,34 +6,62 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private let appState: AppState
     private let hotkeyManager: HotkeyManager
+    private let historyController: HistoryController
+    private let transformController: TransformController
+    private let scratchpadController: ScratchpadController
+    private let setupController: SetupController
+    private let audioInputController: AudioInputController
+    private let navigation = HubNavigationModel()
     private var globalMonitor: Any?
     private var lastShowTime: TimeInterval = 0
 
-    init(appState: AppState, hotkeyManager: HotkeyManager) {
+    init(
+        appState: AppState,
+        hotkeyManager: HotkeyManager,
+        historyController: HistoryController,
+        transformController: TransformController,
+        scratchpadController: ScratchpadController,
+        setupController: SetupController,
+        audioInputController: AudioInputController
+    ) {
         self.appState = appState
         self.hotkeyManager = hotkeyManager
+        self.historyController = historyController
+        self.transformController = transformController
+        self.scratchpadController = scratchpadController
+        self.setupController = setupController
+        self.audioInputController = audioInputController
     }
 
-    func show() {
+    func show(destination: HubDestination = .home) {
+        navigation.selection = destination
         NSLog("SettingsWindowController.show invoked")
         if window == nil {
-            let view = SettingsView(hotkeyManager: hotkeyManager)
+            let view = AppRootView(
+                setupController: setupController,
+                hotkeyManager: hotkeyManager,
+                historyController: historyController,
+                transformController: transformController,
+                scratchpadController: scratchpadController,
+                navigation: navigation
+            )
                 .environmentObject(appState)
+                .environmentObject(audioInputController)
             let hostingController = NSHostingController(rootView: view)
             hostingController.view.autoresizingMask = [.width, .height]
 
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 560),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 920, height: 640),
                                   styleMask: [.titled, .closable, .miniaturizable, .resizable],
                                        backing: .buffered,
                                        defer: false)
+            window.title = "WisprLocal"
             window.isReleasedWhenClosed = false
             window.delegate = self
-            window.setContentSize(NSSize(width: 520, height: 560))
-            window.contentMinSize = NSSize(width: 520, height: 560)
-            window.contentMaxSize = NSSize(width: 520, height: 560)
+            window.setContentSize(NSSize(width: 920, height: 640))
+            window.contentMinSize = NSSize(width: 780, height: 540)
             window.center()
             window.contentViewController = hostingController
-            hostingController.view.frame = NSRect(x: 0, y: 0, width: 520, height: 560)
+            hostingController.view.frame = NSRect(x: 0, y: 0, width: 920, height: 640)
             self.window = window
         }
 
@@ -41,7 +69,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         if let window {
             if let screen = NSScreen.main {
                 let frame = screen.visibleFrame
-                let size = NSSize(width: 520, height: 560)
+                let size = window.frame.size
                 let x = frame.midX - size.width / 2
                 let y = frame.midY - size.height / 2
                 window.setFrame(NSRect(x: x, y: y, width: size.width, height: size.height), display: false)

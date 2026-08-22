@@ -23,11 +23,22 @@ WisprLocal is a macOS menu bar dictation app that records audio, sends it to Ope
    open WisprLocal.xcodeproj
    ```
 
-3. In Xcode, set signing:
-   - Select target `WisprLocal`
-   - Go to `Signing & Capabilities`
-   - Pick your Team
-   - (Optional) change bundle ID from `com.example.WisprLocal`
+3. Create your machine-local signing configuration:
+
+   ```bash
+   cp Config/LocalSigning.xcconfig.example Config/LocalSigning.xcconfig
+   ```
+
+   Replace `YOUR_TEAM_ID` in `Config/LocalSigning.xcconfig` with your Apple
+   Developer team identifier. The local file is ignored by Git. You can find
+   the identifier in Xcode under Settings → Accounts → your team.
+
+   Optionally, change the bundle ID from `com.example.WisprLocal` in the target's
+   Signing & Capabilities settings.
+
+   Accessibility permission is tied to the app's code-signing identity. Use an
+   Apple Development team instead of `Sign to Run Locally`; otherwise macOS may
+   treat each rebuild as a different app and remove its Accessibility grant.
 
 4. Build and run with the `WisprLocal` scheme.
 

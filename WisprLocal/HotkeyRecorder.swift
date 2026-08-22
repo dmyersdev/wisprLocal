@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HotkeyRecorder: View {
     @Binding var hotkey: Hotkey
+    var allowsFnAlone = true
     var onCapture: (Hotkey) -> Void
 
     @State private var isRecording = false
@@ -23,7 +24,9 @@ struct HotkeyRecorder: View {
         guard !isRecording else { return }
         isRecording = true
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
-            if event.type == .flagsChanged, event.modifierFlags.contains(.function) {
+            if allowsFnAlone,
+               event.type == .flagsChanged,
+               event.modifierFlags.contains(.function) {
                 let newHotkey = Hotkey.fnAlone
                 hotkey = newHotkey
                 onCapture(newHotkey)
@@ -32,6 +35,11 @@ struct HotkeyRecorder: View {
             }
             if event.type == .keyDown {
                 let modifiers = HotkeyModifiers.from(event.modifierFlags)
+                if !allowsFnAlone,
+                   event.modifierFlags.contains(.function),
+                   modifiers.isEmpty {
+                    return event
+                }
                 let newHotkey = Hotkey(kind: .carbon, keyCode: event.keyCode, modifiers: modifiers)
                 hotkey = newHotkey
                 onCapture(newHotkey)

@@ -3,6 +3,7 @@
 # Xcode build artifacts
 build/
 DerivedData/
+.derived/
 
 # User-specific Xcode data
 *.xcuserdatad/
@@ -11,3 +12,9 @@ xcuserdata/
 
 # Swift Package Manager
 .build/
+
+# Machine-local signing configuration
+Config/LocalSigning.xcconfig
+
+# Local JavaScript tooling
+node_modules/

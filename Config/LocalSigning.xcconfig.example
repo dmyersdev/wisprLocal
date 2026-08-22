@@ -1,0 +1,3 @@
+// Copy this file to LocalSigning.xcconfig and replace the value with your
+// Apple Developer team identifier. The local file is intentionally ignored.
+WISPRLOCAL_DEVELOPMENT_TEAM = YOUR_TEAM_ID

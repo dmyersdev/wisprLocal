@@ -15,6 +15,16 @@ struct Hotkey: Codable, Equatable {
 
     static let defaultCarbon = Hotkey(kind: .carbon, keyCode: UInt16(kVK_F6), modifiers: [])
     static let fnAlone = Hotkey(kind: .fnAlone, keyCode: 0, modifiers: [])
+    static let scratchpad = Hotkey(
+        kind: .carbon,
+        keyCode: UInt16(kVK_ANSI_S),
+        modifiers: [.option]
+    )
+    static let handsFreeDefault = Hotkey(
+        kind: .carbon,
+        keyCode: UInt16(kVK_Space),
+        modifiers: [.control, .option]
+    )
 
     func displayString() -> String {
         switch kind {
@@ -59,29 +69,87 @@ struct HotkeyModifiers: OptionSet, Codable, Equatable {
     }
 }
 
+enum CancelShortcutPolicy {
+    static func shouldConsume(keyCode: Int64, canCancel: Bool) -> Bool {
+        keyCode == Int64(kVK_Escape) && canCancel
+    }
+}
+
+enum DictationShortcutPolicy {
+    static let doubleTapWindow: TimeInterval = 0.28
+    static let maximumTapDuration: TimeInterval = 0.35
+
+    static func shouldAwaitSecondTap(pressDuration: TimeInterval) -> Bool {
+        pressDuration >= 0 && pressDuration <= maximumTapDuration
+    }
+
+    static func isSecondTap(
+        firstReleaseTime: TimeInterval,
+        secondPressTime: TimeInterval
+    ) -> Bool {
+        let interval = secondPressTime - firstReleaseTime
+        return interval >= 0 && interval <= doubleTapWindow
+    }
+}
+
 @MainActor
 final class HotkeyManager: ObservableObject {
     @Published private(set) var currentHotkey: Hotkey
 
     private let appState: AppState
     private let dictationController: DictationController
+    private let transformController: TransformController
+    private let commandModeController: CommandModeController
+    private let scratchpadController: ScratchpadController
+    private let setupController: SetupController
     private var hotKeyRef: EventHotKeyRef?
+    private var actionHotKeyRefs: [UInt32: EventHotKeyRef] = [:]
+    private var transformHotKeyRefs: [UInt32: EventHotKeyRef] = [:]
+    private var transformIDsByHotkeyID: [UInt32: UUID] = [:]
     private var eventHandlerRef: EventHandlerRef?
 
     private var eventTap: CFMachPort?
     private var eventTapSource: CFRunLoopSource?
+    private var cancelEventTap: CFMachPort?
+    private var cancelEventTapSource: CFRunLoopSource?
     private var cancellables = Set<AnyCancellable>()
 
     private var fnDown = false
     private var fnUsedWithOtherKey = false
     private var fnDownTimestamp: UInt64 = 0
+    private var fnDictationStarted = false
+    private var pendingFnStartTask: Task<Void, Never>?
+    private var pendingDictationReleaseTask: Task<Void, Never>?
+    private var pendingDictationReleaseTime: TimeInterval?
+    private var dictationPressStartedAt: TimeInterval?
+    private var activeCommandShortcut: CommandShortcut?
+    private var isGlobalActionsEnabled = false
 
-    private static let hotkeyID: UInt32 = 1
+    private static let dictationHotkeyID: UInt32 = 1
+    private static let pasteLastHotkeyID: UInt32 = 2
+    private static let copyLastHotkeyID: UInt32 = 3
+    private static let scratchpadHotkeyID: UInt32 = 4
+    private static let handsFreeHotkeyID: UInt32 = 5
+    private static let viewTransformResultHotkeyID: UInt32 = 90
+    private static let transformHotkeyIDStart: UInt32 = 100
     private static let signature: OSType = 0x57535052 // 'WSPR'
 
-    init(appState: AppState, dictationController: DictationController) {
+    var onShowTransformResult: (() -> Void)?
+
+    init(
+        appState: AppState,
+        dictationController: DictationController,
+        transformController: TransformController,
+        commandModeController: CommandModeController,
+        scratchpadController: ScratchpadController,
+        setupController: SetupController
+    ) {
         self.appState = appState
         self.dictationController = dictationController
+        self.transformController = transformController
+        self.commandModeController = commandModeController
+        self.scratchpadController = scratchpadController
+        self.setupController = setupController
 
         if let stored = HotkeyManager.loadStoredHotkey() {
             currentHotkey = stored
@@ -97,26 +165,74 @@ final class HotkeyManager: ObservableObject {
                 self.applyHotkey(self.currentHotkey, persist: true)
             }
             .store(in: &cancellables)
+
+        appState.$handsFreeHotkey
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.registerActionHotkeys()
+            }
+            .store(in: &cancellables)
+
+        appState.$transformSettings
+            .removeDuplicates()
+            .sink { [weak self] settings in
+                self?.registerTransformHotkeys(settings: settings)
+            }
+            .store(in: &cancellables)
+
+        setupController.$isCompleted
+            .removeDuplicates()
+            .sink { [weak self] isCompleted in
+                self?.setGlobalActionsEnabled(isCompleted)
+            }
+            .store(in: &cancellables)
     }
 
     func updateHotkey(_ hotkey: Hotkey) {
         applyHotkey(hotkey, persist: true)
     }
 
+    func updateHandsFreeHotkey(_ hotkey: Hotkey) {
+        guard hotkey.kind == .carbon else { return }
+        appState.handsFreeHotkey = hotkey
+    }
+
     func toggleFromMenu() {
+        guard setupController.requireReady() else { return }
         dictationController.toggle()
     }
 
     private func applyHotkey(_ hotkey: Hotkey, persist: Bool) {
+        if !isGlobalActionsEnabled {
+            let resolvedHotkey = hotkey == .scratchpad ? Hotkey.defaultCarbon : hotkey
+            currentHotkey = resolvedHotkey
+            appState.hotkeyDisplay = resolvedHotkey.kind == .fnAlone
+                ? "fn"
+                : resolvedHotkey.displayString()
+            appState.hotkeyWarning = hotkey == .scratchpad
+                ? "⌥S is reserved for Scratchpad. Dictation was reset to F6."
+                : nil
+            if persist { storeHotkey(resolvedHotkey) }
+            return
+        }
+
+        if hotkey == .scratchpad {
+            let fallback = Hotkey.defaultCarbon
+            currentHotkey = fallback
+            registerCarbonHotkey(fallback)
+            appState.hotkeyDisplay = fallback.displayString()
+            appState.hotkeyWarning = "⌥S is reserved for Scratchpad. Dictation was reset to F6."
+            if persist { storeHotkey(fallback) }
+            return
+        }
+
         if hotkey.kind == .fnAlone {
             if startFnMonitor() {
                 unregisterCarbonHotkey()
                 currentHotkey = hotkey
                 appState.hotkeyDisplay = "fn"
                 appState.hotkeyWarning = nil
-                if appState.holdToTalk {
-                    appState.hotkeyWarning = "Hold-to-talk isn’t supported for Fn alone. Choose another hotkey or disable Hold to Talk."
-                }
                 if persist { storeHotkey(hotkey) }
                 return
             } else {
@@ -130,7 +246,9 @@ final class HotkeyManager: ObservableObject {
             }
         }
 
-        stopFnMonitor()
+        if !startFnMonitor() {
+            appState.commandHotkeyWarning = "Command Mode shortcuts need Accessibility permission."
+        }
         currentHotkey = hotkey
         registerCarbonHotkey(hotkey)
         appState.hotkeyDisplay = hotkey.displayString()
@@ -142,7 +260,10 @@ final class HotkeyManager: ObservableObject {
         unregisterCarbonHotkey()
         installEventHandlerIfNeeded()
         var hotKeyRef: EventHotKeyRef?
-        let hotKeyID = EventHotKeyID(signature: HotkeyManager.signature, id: HotkeyManager.hotkeyID)
+        let hotKeyID = EventHotKeyID(
+            signature: HotkeyManager.signature,
+            id: HotkeyManager.dictationHotkeyID
+        )
         let status = RegisterEventHotKey(UInt32(hotkey.keyCode), hotkey.modifiers.carbonFlags(), hotKeyID, GetEventDispatcherTarget(), 0, &hotKeyRef)
         if status == noErr {
             self.hotKeyRef = hotKeyRef
@@ -172,7 +293,7 @@ final class HotkeyManager: ObservableObject {
             if status == noErr && hotKeyID.signature == HotkeyManager.signature {
                 let kind = GetEventKind(eventRef)
                 DispatchQueue.main.async {
-                    manager.handleCarbonHotkey(kind: kind)
+                    manager.handleCarbonHotkey(id: hotKeyID.id, kind: kind)
                 }
             }
             return noErr
@@ -181,7 +302,7 @@ final class HotkeyManager: ObservableObject {
     }
 
     private func startFnMonitor() -> Bool {
-        stopFnMonitor()
+        if eventTap != nil { return true }
         let mask = (1 << CGEventType.flagsChanged.rawValue) | (1 << CGEventType.keyDown.rawValue)
         let callback: CGEventTapCallBack = { proxy, type, event, userInfo in
             guard let userInfo else { return Unmanaged.passUnretained(event) }
@@ -203,6 +324,7 @@ final class HotkeyManager: ObservableObject {
         CGEvent.tapEnable(tap: tap, enable: true)
         eventTap = tap
         eventTapSource = source
+        appState.commandHotkeyWarning = nil
         return true
     }
 
@@ -215,6 +337,10 @@ final class HotkeyManager: ObservableObject {
         fnDown = false
         fnUsedWithOtherKey = false
         fnDownTimestamp = 0
+        fnDictationStarted = false
+        pendingFnStartTask?.cancel()
+        pendingFnStartTask = nil
+        activeCommandShortcut = nil
     }
 
     private func handleFnEvent(proxy: CGEventTapProxy, type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
@@ -225,38 +351,93 @@ final class HotkeyManager: ObservableObject {
             return Unmanaged.passUnretained(event)
         }
 
-        guard currentHotkey.kind == .fnAlone else {
-            return Unmanaged.passUnretained(event)
-        }
-
         let flags = event.flags
-        let fnOnly = flags.contains(.maskSecondaryFn) && flags.subtracting(.maskSecondaryFn).isEmpty
+        let fnHeld = flags.contains(.maskSecondaryFn)
+        let modifiers = commandModifiers(from: flags)
+        let commandShortcut = CommandShortcutMatcher.match(
+            fnHeld: fnHeld,
+            modifiers: modifiers
+        )
 
         switch type {
         case .flagsChanged:
+            if let commandShortcut {
+                if activeCommandShortcut == nil {
+                    let shouldCancelFnDictation = fnDictationStarted
+                    activeCommandShortcut = commandShortcut
+                    pendingFnStartTask?.cancel()
+                    pendingFnStartTask = nil
+                    fnDown = false
+                    fnUsedWithOtherKey = false
+                    fnDictationStarted = false
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self else { return }
+                        if shouldCancelFnDictation {
+                            self.dictationController.cancelCurrentDictation()
+                        }
+                        self.commandModeController.startRecording()
+                    }
+                }
+                return Unmanaged.passUnretained(event)
+            }
+
+            if activeCommandShortcut != nil {
+                activeCommandShortcut = nil
+                pendingFnStartTask?.cancel()
+                pendingFnStartTask = nil
+                fnDown = false
+                fnUsedWithOtherKey = false
+                fnDictationStarted = false
+                DispatchQueue.main.async { [weak self] in
+                    self?.commandModeController.stopAndExecute()
+                }
+                return Unmanaged.passUnretained(event)
+            }
+
+            guard currentHotkey.kind == .fnAlone else {
+                return Unmanaged.passUnretained(event)
+            }
+
+            let fnOnly = fnHeld && modifiers.isEmpty
             if fnOnly && !fnDown {
                 fnDown = true
                 fnUsedWithOtherKey = false
                 fnDownTimestamp = event.timestamp
                 if appState.holdToTalk {
-                    DispatchQueue.main.async {
-                        switch self.appState.state {
-                        case .idle, .error:
-                            self.dictationController.startRecording()
-                        default:
-                            break
+                    if continueAsHandsFreeIfAwaitingSecondTap(
+                        at: Double(event.timestamp) / 1_000_000_000
+                    ) {
+                        fnDictationStarted = true
+                        return Unmanaged.passUnretained(event)
+                    }
+                    pendingFnStartTask?.cancel()
+                    pendingFnStartTask = Task { [weak self] in
+                        do {
+                            try await Task.sleep(nanoseconds: 120_000_000)
+                        } catch {
+                            return
                         }
+                        guard let self,
+                              !Task.isCancelled,
+                              self.fnDown,
+                              self.activeCommandShortcut == nil,
+                              self.currentHotkey.kind == .fnAlone,
+                              self.appState.holdToTalk else { return }
+                        self.fnDictationStarted = true
+                        self.dictationPressStartedAt = Double(self.fnDownTimestamp) / 1_000_000_000
+                        self.dictationController.startRecording(mode: .pushToTalk)
                     }
                 }
-            } else if fnDown && !flags.contains(.maskSecondaryFn) {
+            } else if fnDown && !fnHeld {
                 let duration = event.timestamp &- fnDownTimestamp
                 let shortPress = duration < 900_000_000
+                pendingFnStartTask?.cancel()
+                pendingFnStartTask = nil
                 if appState.holdToTalk {
-                    if !fnUsedWithOtherKey {
-                        DispatchQueue.main.async {
-                            if self.appState.state == .listening {
-                                self.dictationController.stopAndTranscribe()
-                            }
+                    if fnDictationStarted && !fnUsedWithOtherKey {
+                        let releaseTime = Double(event.timestamp) / 1_000_000_000
+                        DispatchQueue.main.async { [weak self] in
+                            self?.handlePushToTalkRelease(at: releaseTime)
                         }
                     }
                 } else {
@@ -268,8 +449,48 @@ final class HotkeyManager: ObservableObject {
                 }
                 fnDown = false
                 fnUsedWithOtherKey = false
+                fnDictationStarted = false
+            } else if fnDown && !modifiers.isEmpty {
+                fnUsedWithOtherKey = true
+                pendingFnStartTask?.cancel()
+                pendingFnStartTask = nil
+                if fnDictationStarted {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.dictationController.stopAndTranscribe()
+                    }
+                    fnDictationStarted = false
+                }
             }
         case .keyDown:
+            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+            if fnHeld,
+               modifiers.isEmpty,
+               keyCode == Int64(kVK_Space) {
+                pendingFnStartTask?.cancel()
+                pendingFnStartTask = nil
+                fnUsedWithOtherKey = true
+                fnDictationStarted = false
+                if event.getIntegerValueField(.keyboardEventAutorepeat) == 0 {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.dictationController.toggleHandsFree()
+                    }
+                }
+                return nil
+            }
+            if CommandShortcutMatcher.shouldCancelForKeyDown(
+                activeShortcut: activeCommandShortcut
+            ) {
+                activeCommandShortcut = nil
+                pendingFnStartTask?.cancel()
+                pendingFnStartTask = nil
+                fnDown = false
+                fnUsedWithOtherKey = false
+                fnDictationStarted = false
+                DispatchQueue.main.async { [weak self] in
+                    self?.commandModeController.cancelCurrentCommand()
+                }
+                return Unmanaged.passUnretained(event)
+            }
             if fnDown { fnUsedWithOtherKey = true }
         default:
             break
@@ -278,24 +499,366 @@ final class HotkeyManager: ObservableObject {
         return Unmanaged.passUnretained(event)
     }
 
-    private func handleCarbonHotkey(kind: UInt32) {
-        if appState.holdToTalk {
+    private func commandModifiers(from flags: CGEventFlags) -> HotkeyModifiers {
+        var modifiers: HotkeyModifiers = []
+        if flags.contains(.maskCommand) { modifiers.insert(.command) }
+        if flags.contains(.maskAlternate) { modifiers.insert(.option) }
+        if flags.contains(.maskControl) { modifiers.insert(.control) }
+        if flags.contains(.maskShift) { modifiers.insert(.shift) }
+        return modifiers
+    }
+
+    private func handleCarbonHotkey(id: UInt32, kind: UInt32) {
+        guard setupController.requireReady() else { return }
+        switch id {
+        case Self.dictationHotkeyID:
+            handleDictationHotkey(kind: kind)
+        case Self.pasteLastHotkeyID where kind == UInt32(kEventHotKeyPressed):
+            dictationController.pasteLastTranscript()
+        case Self.copyLastHotkeyID where kind == UInt32(kEventHotKeyPressed):
+            dictationController.copyLastTranscript()
+        case Self.scratchpadHotkeyID:
             if kind == UInt32(kEventHotKeyPressed) {
-                switch appState.state {
-                case .idle, .error:
-                    dictationController.startRecording()
-                default:
-                    break
-                }
+                scratchpadController.shortcutPressed()
             } else if kind == UInt32(kEventHotKeyReleased) {
-                if appState.state == .listening {
-                    dictationController.stopAndTranscribe()
+                scratchpadController.shortcutReleased()
+            }
+        case Self.handsFreeHotkeyID where kind == UInt32(kEventHotKeyPressed):
+            dictationController.toggleHandsFree()
+        case Self.viewTransformResultHotkeyID where kind == UInt32(kEventHotKeyPressed):
+            transformController.showLatestResult()
+            onShowTransformResult?()
+        case let hotkeyID where kind == UInt32(kEventHotKeyPressed):
+            if let transformID = transformIDsByHotkeyID[hotkeyID] {
+                transformController.apply(transformID: transformID)
+            }
+        default:
+            break
+        }
+    }
+
+    private func handleDictationHotkey(kind: UInt32) {
+        if appState.holdToTalk, kind == UInt32(kEventHotKeyPressed) {
+            if continueAsHandsFreeIfAwaitingSecondTap(
+                at: ProcessInfo.processInfo.systemUptime
+            ) {
+                return
+            }
+            switch appState.state {
+            case .idle, .error:
+                dictationPressStartedAt = ProcessInfo.processInfo.systemUptime
+                dictationController.startRecording(mode: .pushToTalk)
+            default:
+                break
+            }
+        } else if appState.holdToTalk, kind == UInt32(kEventHotKeyReleased) {
+            handlePushToTalkRelease(at: ProcessInfo.processInfo.systemUptime)
+        } else if kind == UInt32(kEventHotKeyPressed) {
+            dictationController.toggleHandsFree()
+        }
+    }
+
+    private func continueAsHandsFreeIfAwaitingSecondTap(
+        at pressTime: TimeInterval
+    ) -> Bool {
+        guard pendingDictationReleaseTask != nil,
+              let releaseTime = pendingDictationReleaseTime,
+              DictationShortcutPolicy.isSecondTap(
+                firstReleaseTime: releaseTime,
+                secondPressTime: pressTime
+              ) else { return false }
+        pendingDictationReleaseTask?.cancel()
+        pendingDictationReleaseTask = nil
+        pendingDictationReleaseTime = nil
+        dictationPressStartedAt = nil
+        dictationController.lockHandsFree()
+        return true
+    }
+
+    private func handlePushToTalkRelease(at releaseTime: TimeInterval) {
+        guard !dictationController.isHandsFreeOperation else {
+            dictationPressStartedAt = nil
+            return
+        }
+        guard let pressStartedAt = dictationPressStartedAt else { return }
+        dictationPressStartedAt = nil
+        let duration = max(0, releaseTime - pressStartedAt)
+        guard DictationShortcutPolicy.shouldAwaitSecondTap(pressDuration: duration) else {
+            dictationController.stopAndTranscribe()
+            return
+        }
+
+        pendingDictationReleaseTask?.cancel()
+        pendingDictationReleaseTime = releaseTime
+        pendingDictationReleaseTask = Task { [weak self] in
+            do {
+                try await Task.sleep(
+                    nanoseconds: UInt64(DictationShortcutPolicy.doubleTapWindow * 1_000_000_000)
+                )
+            } catch {
+                return
+            }
+            guard let self, !Task.isCancelled else { return }
+            self.pendingDictationReleaseTask = nil
+            self.pendingDictationReleaseTime = nil
+            self.dictationController.stopAndTranscribe()
+        }
+    }
+
+    private func registerActionHotkeys() {
+        for reference in actionHotKeyRefs.values {
+            UnregisterEventHotKey(reference)
+        }
+        actionHotKeyRefs.removeAll()
+        guard isGlobalActionsEnabled else { return }
+        installEventHandlerIfNeeded()
+
+        let recoveryModifiers: HotkeyModifiers = [.command, .control]
+        let actions: [(id: UInt32, keyCode: UInt32, modifiers: UInt32, name: String)] = [
+            (
+                Self.pasteLastHotkeyID,
+                UInt32(kVK_ANSI_V),
+                recoveryModifiers.carbonFlags(),
+                "Paste last transcript (⌃⌘V)"
+            ),
+            (
+                Self.copyLastHotkeyID,
+                UInt32(kVK_ANSI_C),
+                recoveryModifiers.carbonFlags(),
+                "Copy last transcript (⌃⌘C)"
+            ),
+            (
+                Self.scratchpadHotkeyID,
+                UInt32(Hotkey.scratchpad.keyCode),
+                Hotkey.scratchpad.modifiers.carbonFlags(),
+                "Scratchpad (⌥S)"
+            ),
+            (
+                Self.handsFreeHotkeyID,
+                UInt32(appState.handsFreeHotkey.keyCode),
+                appState.handsFreeHotkey.modifiers.carbonFlags(),
+                "Hands-free dictation (\(appState.handsFreeHotkey.displayString()))"
+            )
+        ]
+
+        var failures: [String] = []
+        for action in actions {
+            var reference: EventHotKeyRef?
+            let identifier = EventHotKeyID(signature: Self.signature, id: action.id)
+            let status = RegisterEventHotKey(
+                action.keyCode,
+                action.modifiers,
+                identifier,
+                GetEventDispatcherTarget(),
+                0,
+                &reference
+            )
+            if status == noErr, let reference {
+                actionHotKeyRefs[action.id] = reference
+            } else {
+                failures.append(action.name)
+            }
+        }
+
+        if !startCancelMonitor() {
+            failures.append("Cancel dictation (Esc)")
+        }
+
+        appState.recoveryHotkeyWarning = failures.isEmpty
+            ? nil
+            : "Couldn’t enable: \(failures.joined(separator: ", ")). Check Accessibility permission and shortcut conflicts."
+        appState.scratchpadHotkeyWarning = failures.contains("Scratchpad (⌥S)")
+            ? "Couldn’t enable ⌥S. Quit the app using that shortcut, then relaunch WisprLocal."
+            : nil
+        appState.handsFreeHotkeyWarning = failures.contains {
+            $0.hasPrefix("Hands-free dictation")
+        } ? "Couldn’t enable the hands-free shortcut. Choose another shortcut in Settings." : nil
+    }
+
+    private func registerTransformHotkeys(settings: TransformSettings) {
+        for reference in transformHotKeyRefs.values {
+            UnregisterEventHotKey(reference)
+        }
+        transformHotKeyRefs.removeAll()
+        transformIDsByHotkeyID.removeAll()
+        appState.transformHotkeyWarning = nil
+
+        guard isGlobalActionsEnabled, settings.isEnabled else { return }
+        installEventHandlerIfNeeded()
+
+        var registrations: [(id: UInt32, hotkey: Hotkey, name: String, transformID: UUID?)] = []
+        for (index, definition) in settings.definitions.enumerated() {
+            guard let hotkey = definition.hotkey,
+                  hotkey.kind == .carbon else { continue }
+            registrations.append((
+                Self.transformHotkeyIDStart + UInt32(index),
+                hotkey,
+                definition.name,
+                definition.id
+            ))
+        }
+        registrations.append((
+            Self.viewTransformResultHotkeyID,
+            Hotkey(
+                kind: .carbon,
+                keyCode: UInt16(kVK_ANSI_O),
+                modifiers: [.option]
+            ),
+            "View latest transform",
+            nil
+        ))
+
+        var failures: [String] = []
+        for registration in registrations {
+            var reference: EventHotKeyRef?
+            let identifier = EventHotKeyID(
+                signature: Self.signature,
+                id: registration.id
+            )
+            let status = RegisterEventHotKey(
+                UInt32(registration.hotkey.keyCode),
+                registration.hotkey.modifiers.carbonFlags(),
+                identifier,
+                GetEventDispatcherTarget(),
+                0,
+                &reference
+            )
+            if status == noErr, let reference {
+                transformHotKeyRefs[registration.id] = reference
+                if let transformID = registration.transformID {
+                    transformIDsByHotkeyID[registration.id] = transformID
                 }
+            } else {
+                failures.append(registration.name)
             }
+        }
+
+        if !failures.isEmpty {
+            appState.transformHotkeyWarning = "Couldn’t enable shortcuts for: \(failures.joined(separator: ", ")). Reassign conflicting shortcuts."
+        }
+    }
+
+    private func startCancelMonitor() -> Bool {
+        stopCancelMonitor()
+        let mask = CGEventMask(1 << CGEventType.keyDown.rawValue)
+        let callback: CGEventTapCallBack = { _, type, event, userInfo in
+            guard let userInfo else { return Unmanaged.passUnretained(event) }
+            let manager = Unmanaged<HotkeyManager>.fromOpaque(userInfo).takeUnretainedValue()
+            return manager.handleCancelEvent(type: type, event: event)
+        }
+
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: mask,
+            callback: callback,
+            userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        ) else {
+            return false
+        }
+
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+        cancelEventTap = tap
+        cancelEventTapSource = source
+        return true
+    }
+
+    private func setGlobalActionsEnabled(_ isEnabled: Bool) {
+        guard isEnabled != isGlobalActionsEnabled else { return }
+        isGlobalActionsEnabled = isEnabled
+
+        if isEnabled {
+            applyHotkey(currentHotkey, persist: false)
+            registerActionHotkeys()
+            registerTransformHotkeys(settings: appState.transformSettings)
         } else {
-            if kind == UInt32(kEventHotKeyPressed) {
-                dictationController.toggle()
+            pendingFnStartTask?.cancel()
+            pendingFnStartTask = nil
+            pendingDictationReleaseTask?.cancel()
+            pendingDictationReleaseTask = nil
+            pendingDictationReleaseTime = nil
+            dictationPressStartedAt = nil
+            unregisterCarbonHotkey()
+            stopFnMonitor()
+            stopCancelMonitor()
+            for reference in actionHotKeyRefs.values {
+                UnregisterEventHotKey(reference)
             }
+            actionHotKeyRefs.removeAll()
+            for reference in transformHotKeyRefs.values {
+                UnregisterEventHotKey(reference)
+            }
+            transformHotKeyRefs.removeAll()
+            transformIDsByHotkeyID.removeAll()
+            dictationController.cancelCurrentDictation()
+            transformController.cancelCurrentTransform()
+            commandModeController.cancelCurrentCommand()
+            scratchpadController.cancelCurrentAction()
+        }
+    }
+
+    private func handleCancelEvent(
+        type: CGEventType,
+        event: CGEvent
+    ) -> Unmanaged<CGEvent>? {
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let cancelEventTap {
+                CGEvent.tapEnable(tap: cancelEventTap, enable: true)
+            }
+            return Unmanaged.passUnretained(event)
+        }
+
+        let canCancel = dictationController.canCancel
+            || transformController.canCancel
+            || commandModeController.canCancel
+            || scratchpadController.canCancel
+        guard CancelShortcutPolicy.shouldConsume(
+            keyCode: event.getIntegerValueField(.keyboardEventKeycode),
+            canCancel: canCancel
+        ) else {
+            return Unmanaged.passUnretained(event)
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.dictationController.cancelCurrentDictation()
+            self?.transformController.cancelCurrentTransform()
+            self?.commandModeController.cancelCurrentCommand()
+            self?.scratchpadController.cancelCurrentAction()
+        }
+        return nil
+    }
+
+    private func stopCancelMonitor() {
+        if let source = cancelEventTapSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+        }
+        cancelEventTap = nil
+        cancelEventTapSource = nil
+    }
+
+    deinit {
+        pendingFnStartTask?.cancel()
+        pendingDictationReleaseTask?.cancel()
+        if let hotKeyRef {
+            UnregisterEventHotKey(hotKeyRef)
+        }
+        for reference in actionHotKeyRefs.values {
+            UnregisterEventHotKey(reference)
+        }
+        for reference in transformHotKeyRefs.values {
+            UnregisterEventHotKey(reference)
+        }
+        if let eventTapSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), eventTapSource, .commonModes)
+        }
+        if let cancelEventTapSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), cancelEventTapSource, .commonModes)
+        }
+        if let eventHandlerRef {
+            RemoveEventHandler(eventHandlerRef)
         }
     }
 

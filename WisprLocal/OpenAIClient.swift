@@ -1,6 +1,23 @@
 import Foundation
 
-final class OpenAIClient {
+protocol TranscriptionServing: AnyObject {
+    func transcribe(
+        fileURL: URL,
+        language: String?,
+        vocabularyPrompt: String?
+    ) async throws -> String
+
+    func polishTranscript(text: String) async throws -> PolishResult
+}
+
+protocol TransformServing: AnyObject {
+    func transform(
+        text: String,
+        invocation: TransformInvocation
+    ) async throws -> TransformGenerationResult
+}
+
+final class OpenAIClient: TranscriptionServing, TransformServing, CommandServing {
     private let keychain: KeychainService
     private let session: URLSession
     private let maxFileSizeBytes: Int64 = 25 * 1024 * 1024
@@ -13,7 +30,26 @@ final class OpenAIClient {
         self.session = URLSession(configuration: config)
     }
 
-    func transcribe(fileURL: URL, language: String?) async throws -> String {
+    static func audioContentType(for fileURL: URL) -> String {
+        switch fileURL.pathExtension.lowercased() {
+        case "m4a", "mp4":
+            return "audio/mp4"
+        case "wav":
+            return "audio/wav"
+        case "mp3", "mpeg", "mpga":
+            return "audio/mpeg"
+        case "webm":
+            return "audio/webm"
+        default:
+            return "application/octet-stream"
+        }
+    }
+
+    func transcribe(
+        fileURL: URL,
+        language: String?,
+        vocabularyPrompt: String?
+    ) async throws -> String {
         guard let apiKey = try keychain.loadAPIKey(), !apiKey.isEmpty else {
             throw AppError.missingAPIKey
         }
@@ -30,13 +66,10 @@ final class OpenAIClient {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        var fields: [String: String] = [
-            "model": "gpt-4o-mini-transcribe",
-            "response_format": "text"
-        ]
-        if let language, !language.isEmpty {
-            fields["language"] = language
-        }
+        let fields = Self.transcriptionFields(
+            language: language,
+            vocabularyPrompt: vocabularyPrompt
+        )
 
         request.httpBody = try createMultipartBody(fileURL: fileURL, boundary: boundary, fields: fields)
 
@@ -48,8 +81,9 @@ final class OpenAIClient {
 
             switch http.statusCode {
             case 200...299:
-                if let text = String(data: data, encoding: .utf8) {
-                    return text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let response = try? JSONDecoder().decode(AudioTranscriptionResponse.self, from: data),
+                   let text = response.text.trimmedOrNil {
+                    return text
                 }
                 throw AppError.transcriptionFailed("Empty response.")
             case 401:
@@ -65,6 +99,23 @@ final class OpenAIClient {
         } catch {
             throw AppError.network(error.localizedDescription)
         }
+    }
+
+    static func transcriptionFields(
+        language: String?,
+        vocabularyPrompt: String?
+    ) -> [String: String] {
+        var fields = [
+            "model": "gpt-4o-mini-transcribe",
+            "response_format": "json"
+        ]
+        if let language = language?.trimmedOrNil {
+            fields["language"] = language
+        }
+        if let vocabularyPrompt = vocabularyPrompt?.trimmedOrNil {
+            fields["prompt"] = vocabularyPrompt
+        }
+        return fields
     }
 
     func polishTranscript(text: String) async throws -> PolishResult {
@@ -125,6 +176,172 @@ final class OpenAIClient {
         }
     }
 
+    func transform(
+        text: String,
+        invocation: TransformInvocation
+    ) async throws -> TransformGenerationResult {
+        guard let apiKey = try keychain.loadAPIKey(), !apiKey.isEmpty else {
+            throw AppError.missingAPIKey
+        }
+
+        let url = URL(string: "https://api.openai.com/v1/responses")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(
+            TextResponseRequest(
+                model: "gpt-4.1-nano",
+                instructions: TransformPromptBuilder.instructions(for: invocation),
+                input: text,
+                maxOutputTokens: 4_096,
+                store: false
+            )
+        )
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                throw AppError.transformFailed("Invalid response.")
+            }
+            switch http.statusCode {
+            case 200...299:
+                do {
+                    return try Self.decodeTransformResponse(data)
+                } catch let error as AppError {
+                    throw error
+                } catch {
+                    throw AppError.transformFailed("Invalid response.")
+                }
+            case 401:
+                throw AppError.unauthorized
+            case 403:
+                throw AppError.forbidden
+            default:
+                let message = parseAPIErrorMessage(data: data)
+                throw AppError.transformFailed(message ?? "HTTP \(http.statusCode)")
+            }
+        } catch let error as AppError {
+            throw error
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw AppError.network(error.localizedDescription)
+        }
+    }
+
+    static func decodeTransformResponse(_ data: Data) throws -> TransformGenerationResult {
+        let response = try decodeTextResponse(
+            data,
+            emptyError: .transformReturnedNoText,
+            failure: AppError.transformFailed
+        )
+        return TransformGenerationResult(
+            text: response.text,
+            inputTokens: response.inputTokens,
+            outputTokens: response.outputTokens
+        )
+    }
+
+    func executeCommand(_ command: CommandModeRequest) async throws -> CommandGenerationResult {
+        guard let apiKey = try keychain.loadAPIKey(), !apiKey.isEmpty else {
+            throw AppError.missingAPIKey
+        }
+
+        let url = URL(string: "https://api.openai.com/v1/responses")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(
+            TextResponseRequest(
+                model: "gpt-4.1-nano",
+                instructions: CommandModePromptBuilder.instructions(
+                    hasSelection: command.selectedText != nil
+                ),
+                input: try CommandModePromptBuilder.input(for: command),
+                maxOutputTokens: 4_096,
+                store: false
+            )
+        )
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                throw AppError.commandFailed("Invalid response.")
+            }
+            switch http.statusCode {
+            case 200...299:
+                return try Self.decodeCommandResponse(data)
+            case 401:
+                throw AppError.unauthorized
+            case 403:
+                throw AppError.forbidden
+            default:
+                let message = parseAPIErrorMessage(data: data)
+                throw AppError.commandFailed(message ?? "HTTP \(http.statusCode)")
+            }
+        } catch let error as AppError {
+            throw error
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            throw AppError.network(error.localizedDescription)
+        }
+    }
+
+    static func decodeCommandResponse(_ data: Data) throws -> CommandGenerationResult {
+        let response = try decodeTextResponse(
+            data,
+            emptyError: .commandReturnedNoText,
+            failure: AppError.commandFailed
+        )
+        return CommandGenerationResult(
+            text: response.text,
+            inputTokens: response.inputTokens,
+            outputTokens: response.outputTokens
+        )
+    }
+
+    private static func decodeTextResponse(
+        _ data: Data,
+        emptyError: AppError,
+        failure: (String) -> AppError
+    ) throws -> DecodedTextResponse {
+        let response = try JSONDecoder().decode(TransformResponseEnvelope.self, from: data)
+        guard response.status == "completed" else {
+            if let message = response.error?.message {
+                throw failure(message)
+            }
+            let status = response.status ?? "unknown"
+            throw failure(
+                response.incompleteDetails?.reason
+                    ?? "The model response ended with status \(status)."
+            )
+        }
+        let text = response.output
+            .filter { $0.type == "message" }
+            .flatMap(\.content)
+            .filter { $0.type == "output_text" }
+            .compactMap(\.text)
+            .joined()
+        guard text.trimmedOrNil != nil else {
+            if let refusal = response.output
+                .filter({ $0.type == "message" })
+                .flatMap(\.content)
+                .compactMap(\.refusal)
+                .first {
+                throw failure(refusal)
+            }
+            throw emptyError
+        }
+        return DecodedTextResponse(
+            text: text,
+            inputTokens: response.usage?.inputTokens ?? 0,
+            outputTokens: response.usage?.outputTokens ?? 0
+        )
+    }
+
 
     private func fileSizeBytes(for url: URL) throws -> Int64 {
         let values = try url.resourceValues(forKeys: [.fileSizeKey])
@@ -151,7 +368,7 @@ final class OpenAIClient {
         let fileData = try Data(contentsOf: fileURL)
         body.append("--\(boundary)\r\n")
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n")
-        body.append("Content-Type: audio/wav\r\n\r\n")
+        body.append("Content-Type: \(Self.audioContentType(for: fileURL))\r\n\r\n")
         body.append(fileData)
         body.append("\r\n")
         body.append("--\(boundary)--\r\n")
@@ -164,6 +381,10 @@ private struct OpenAIErrorEnvelope: Decodable {
         let message: String?
     }
     let error: APIError?
+}
+
+private struct AudioTranscriptionResponse: Decodable {
+    let text: String
 }
 
 private struct ChatCompletionRequest: Encodable {
@@ -196,6 +417,84 @@ private struct ChatCompletionResponse: Decodable {
             case completionTokens = "completion_tokens"
             case totalTokens = "total_tokens"
         }
+    }
+}
+
+private struct TextResponseRequest: Encodable {
+    let model: String
+    let instructions: String
+    let input: String
+    let maxOutputTokens: Int
+    let store: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case model
+        case instructions
+        case input
+        case maxOutputTokens = "max_output_tokens"
+        case store
+    }
+}
+
+private struct DecodedTextResponse {
+    let text: String
+    let inputTokens: Int
+    let outputTokens: Int
+}
+
+private struct TransformResponseEnvelope: Decodable {
+    struct OutputItem: Decodable {
+        struct ContentItem: Decodable {
+            let type: String
+            let text: String?
+            let refusal: String?
+        }
+
+        let type: String
+        let content: [ContentItem]
+
+        enum CodingKeys: String, CodingKey {
+            case type
+            case content
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            type = try container.decode(String.self, forKey: .type)
+            content = try container.decodeIfPresent([ContentItem].self, forKey: .content) ?? []
+        }
+    }
+
+    struct Usage: Decodable {
+        let inputTokens: Int
+        let outputTokens: Int
+
+        enum CodingKeys: String, CodingKey {
+            case inputTokens = "input_tokens"
+            case outputTokens = "output_tokens"
+        }
+    }
+
+    struct IncompleteDetails: Decodable {
+        let reason: String?
+    }
+
+    struct ResponseError: Decodable {
+        let message: String?
+    }
+
+    let output: [OutputItem]
+    let usage: Usage?
+    let status: String?
+    let incompleteDetails: IncompleteDetails?
+    let error: ResponseError?
+
+    enum CodingKeys: String, CodingKey {
+        case output
+        case usage
+        case status
+        case incompleteDetails = "incomplete_details"
+        case error
     }
 }
 

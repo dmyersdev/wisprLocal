@@ -1,0 +1,7 @@
+// Keep the development team machine-local so contributors and CI do not need
+// to modify the tracked Xcode project. Copy LocalSigning.xcconfig.example to
+// LocalSigning.xcconfig and provide your Apple Developer team identifier.
+WISPRLOCAL_DEVELOPMENT_TEAM =
+#include? "LocalSigning.xcconfig"
+
+DEVELOPMENT_TEAM = $(WISPRLOCAL_DEVELOPMENT_TEAM)

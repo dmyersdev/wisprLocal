@@ -14,6 +14,7 @@ final class HUDWindowController {
     private var observers: [ObserverToken] = []
     private let idleWindowSize = NSSize(width: 60, height: 15)
     private let activeWindowSize = NSSize(width: 76, height: 20)
+    private let warningWindowSize = NSSize(width: 122, height: 20)
     private let bottomPadding: CGFloat = 10
     private let mouseBottomProximity: CGFloat = 6
     private let positionAnimationDuration: TimeInterval = 0.18
@@ -45,9 +46,13 @@ final class HUDWindowController {
             self?.handleStopClick()
         }
 
-        appState.$state
-            .sink { [weak self] state in
-                self?.update(for: state)
+        Publishers.CombineLatest3(
+            appState.$state,
+            appState.$dictationSessionWarning,
+            appState.$activeDictationMode
+        )
+            .sink { [weak self] state, warning, mode in
+                self?.update(for: state, warning: warning, mode: mode)
             }
             .store(in: &cancellables)
 
@@ -78,31 +83,50 @@ final class HUDWindowController {
         observers.forEach { $0.center.removeObserver($0.token) }
     }
 
-    private func update(for state: AppState.State) {
-        updateWindowSize(for: state)
+    private func update(
+        for state: AppState.State,
+        warning: String?,
+        mode: DictationRecordingMode?
+    ) {
+        updateWindowSize(for: state, warning: warning)
         switch state {
         case .idle:
             contentView.setStyle(.idle)
             contentView.setText("")
         case .listening:
             contentView.setStyle(.listening)
-            contentView.setText("")
+            contentView.setText(warning ?? "")
         case .transcribing:
             contentView.setStyle(.transcribing)
             contentView.setText("Transcribing…")
+        case .commandListening:
+            contentView.setStyle(.commandListening)
+            contentView.setText("")
+        case .commandProcessing:
+            contentView.setStyle(.commandProcessing)
+            contentView.setText("Running…")
+        case .scratchpadListening:
+            contentView.setStyle(.commandListening)
+            contentView.setText("")
+        case .scratchpadProcessing:
+            contentView.setStyle(.commandProcessing)
+            contentView.setText("Adding…")
         case .error(let message):
             contentView.setStyle(.error)
             contentView.setText("Error: \(message)")
         }
-        contentView.setStopButtonVisible(state == .listening && appState.listeningStartedFromHUD)
+        contentView.setStopButtonVisible(state == .listening && mode == .handsFree)
     }
 
-    private func updateWindowSize(for state: AppState.State) {
+    private func updateWindowSize(for state: AppState.State, warning: String?) {
         let targetSize: NSSize
         switch state {
         case .idle, .error:
             targetSize = idleWindowSize
-        case .listening, .transcribing:
+        case .listening:
+            targetSize = warning == nil ? activeWindowSize : warningWindowSize
+        case .transcribing, .commandListening, .commandProcessing,
+             .scratchpadListening, .scratchpadProcessing:
             targetSize = activeWindowSize
         }
         if window.contentView?.frame.size != targetSize {
@@ -193,7 +217,7 @@ final class HUDWindowController {
     private func handlePillClick() {
         switch appState.state {
         case .idle, .error:
-            dictationController.startRecording(source: .hud)
+            dictationController.startRecording(mode: .handsFree)
         default:
             break
         }
@@ -211,6 +235,8 @@ private final class HUDContentView: NSView {
         case idle
         case listening
         case transcribing
+        case commandListening
+        case commandProcessing
         case error
     }
 
@@ -367,7 +393,8 @@ private final class HUDContentView: NSView {
         stopButton.layer?.cornerRadius = stopSize / 2
 
         let textX: CGFloat = 22
-        let textWidth = max(0, bounds.width - textX - 4)
+        let textRight = showsStopButton ? stopX - elementSpacing : bounds.width - 4
+        let textWidth = max(0, textRight - textX)
         textField.frame = NSRect(x: textX, y: (bounds.height - 10) / 2, width: textWidth, height: 10)
         hoverTextField.frame = NSRect(x: 0, y: 0, width: 0, height: 0)
         isInLayout = false
@@ -378,12 +405,14 @@ private final class HUDContentView: NSView {
         switch newStyle {
         case .idle:
             backgroundLayer.backgroundColor = NSColor.black.withAlphaComponent(0.6).cgColor
+            dotView.layer?.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.9).cgColor
             spinner.stopAnimation(nil)
             spinner.isHidden = true
             waveView.isHidden = true
             waveView.stop()
         case .listening:
             backgroundLayer.backgroundColor = NSColor.black.withAlphaComponent(0.85).cgColor
+            dotView.layer?.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.9).cgColor
             spinner.stopAnimation(nil)
             spinner.isHidden = true
             waveView.isHidden = false
@@ -394,8 +423,24 @@ private final class HUDContentView: NSView {
             spinner.startAnimation(nil)
             waveView.isHidden = true
             waveView.stop()
+            dotView.layer?.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.9).cgColor
+        case .commandListening:
+            backgroundLayer.backgroundColor = NSColor.systemPurple.withAlphaComponent(0.88).cgColor
+            dotView.layer?.backgroundColor = NSColor.systemPink.withAlphaComponent(0.95).cgColor
+            spinner.stopAnimation(nil)
+            spinner.isHidden = true
+            waveView.isHidden = false
+            waveView.start()
+        case .commandProcessing:
+            backgroundLayer.backgroundColor = NSColor.systemPurple.withAlphaComponent(0.88).cgColor
+            dotView.layer?.backgroundColor = NSColor.systemPink.withAlphaComponent(0.95).cgColor
+            spinner.isHidden = false
+            spinner.startAnimation(nil)
+            waveView.isHidden = true
+            waveView.stop()
         case .error:
             backgroundLayer.backgroundColor = NSColor.systemRed.withAlphaComponent(0.85).cgColor
+            dotView.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.9).cgColor
             spinner.stopAnimation(nil)
             spinner.isHidden = true
             waveView.isHidden = true
@@ -407,6 +452,14 @@ private final class HUDContentView: NSView {
     func setText(_ text: String) {
         textField.stringValue = text
         textField.alignment = .center
+        if style == .listening {
+            waveView.isHidden = !text.isEmpty
+            if text.isEmpty {
+                waveView.start()
+            } else {
+                waveView.stop()
+            }
+        }
     }
 
     func setHotkeyDisplay(_ value: String) {
@@ -579,4 +632,3 @@ private final class WaveformBarsView: NSView {
         needsDisplay = true
     }
 }
-

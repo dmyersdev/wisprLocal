@@ -22,6 +22,37 @@
 		1A2B3C4D5E6F78900123460C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123470C /* SettingsView.swift */; };
 		1A2B3C4D5E6F78900123460D /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123470D /* Models.swift */; };
 		1A2B3C4D5E6F78900123460E /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123470F /* SettingsWindowController.swift */; };
+		1A2B3C4D5E6F789001234615 /* SnippetExpander.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234725 /* SnippetExpander.swift */; };
+		1A2B3C4D5E6F789001234616 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234726 /* HubView.swift */; };
+		1A2B3C4D5E6F789001234617 /* SnippetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234727 /* SnippetsView.swift */; };
+		1A2B3C4D5E6F789001234618 /* DictionaryEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234728 /* DictionaryEngine.swift */; };
+		1A2B3C4D5E6F789001234619 /* DictionaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234729 /* DictionaryView.swift */; };
+		1A2B3C4D5E6F78900123461A /* OutputCommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123472A /* OutputCommandParser.swift */; };
+		1A2B3C4D5E6F78900123461B /* TransformModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123472B /* TransformModels.swift */; };
+		1A2B3C4D5E6F78900123461C /* SelectedTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123472C /* SelectedTextEditor.swift */; };
+		1A2B3C4D5E6F78900123461D /* TransformController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123472D /* TransformController.swift */; };
+		1A2B3C4D5E6F78900123461E /* TransformDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123472E /* TransformDiff.swift */; };
+		1A2B3C4D5E6F78900123461F /* TransformsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123472F /* TransformsView.swift */; };
+		1A2B3C4D5E6F789001234620 /* TransformStatusWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234734 /* TransformStatusWindow.swift */; };
+		1A2B3C4D5E6F789001234621 /* CommandModeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234735 /* CommandModeModels.swift */; };
+		1A2B3C4D5E6F789001234622 /* CommandModeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234736 /* CommandModeController.swift */; };
+		1A2B3C4D5E6F789001234623 /* CommandStatusWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234737 /* CommandStatusWindow.swift */; };
+		1A2B3C4D5E6F789001234624 /* ScratchpadModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234738 /* ScratchpadModels.swift */; };
+		1A2B3C4D5E6F789001234625 /* ScratchpadEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234739 /* ScratchpadEditor.swift */; };
+		1A2B3C4D5E6F789001234626 /* ScratchpadController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123473A /* ScratchpadController.swift */; };
+		1A2B3C4D5E6F789001234627 /* ScratchpadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123473B /* ScratchpadView.swift */; };
+		1A2B3C4D5E6F789001234628 /* ScratchpadWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123473C /* ScratchpadWindowController.swift */; };
+		1A2B3C4D5E6F789001234629 /* StyleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123473D /* StyleModels.swift */; };
+		1A2B3C4D5E6F78900123462A /* StyleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F78900123473E /* StyleView.swift */; };
+		B1B2C3D4E5F6078901234500 /* SnippetExpanderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234502 /* SnippetExpanderTests.swift */; };
+		B1B2C3D4E5F6078901234510 /* DictionaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234511 /* DictionaryTests.swift */; };
+		B1B2C3D4E5F6078901234520 /* OutputPipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234521 /* OutputPipelineTests.swift */; };
+		B1B2C3D4E5F6078901234530 /* TransformTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234531 /* TransformTests.swift */; };
+		B1B2C3D4E5F6078901234540 /* CommandModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234541 /* CommandModeTests.swift */; };
+		B1B2C3D4E5F6078901234550 /* ScratchpadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234551 /* ScratchpadTests.swift */; };
+		B1B2C3D4E5F6078901234560 /* StyleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234561 /* StyleTests.swift */; };
+		B1B2C3D4E5F6078901234570 /* HistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234571 /* HistoryTests.swift */; };
+		B1B2C3D4E5F6078901234580 /* SetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234581 /* SetupTests.swift */; };
 		1A2B3C4D5E6F789001234732 /* DockUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234733 /* DockUtils.swift */; };
 		1A2B3C4D5E6F789001234731 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234730 /* Assets.xcassets */; };
 		1A2B3C4D5E6F789001234610 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234720 /* AppKit.framework */; };
@@ -29,7 +60,27 @@
 		1A2B3C4D5E6F789001234612 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234722 /* AVFoundation.framework */; };
 		1A2B3C4D5E6F789001234613 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234723 /* Carbon.framework */; };
 		1A2B3C4D5E6F789001234614 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234724 /* ApplicationServices.framework */; };
+		1A2B3C4D5E6F78900123462B /* NaturalLanguage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234740 /* NaturalLanguage.framework */; };
+		1A2B3C4D5E6F78900123462C /* HistoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234741 /* HistoryModels.swift */; };
+		1A2B3C4D5E6F78900123462D /* HistoryController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234742 /* HistoryController.swift */; };
+		1A2B3C4D5E6F78900123462E /* SetupModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234743 /* SetupModels.swift */; };
+		1A2B3C4D5E6F78900123462F /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234744 /* SetupView.swift */; };
+		1A2B3C4D5E6F789001234630 /* AudioInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234745 /* AudioInputController.swift */; };
+		1A2B3C4D5E6F789001234631 /* MicrophoneInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234746 /* MicrophoneInputView.swift */; };
+		1A2B3C4D5E6F789001234633 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234747 /* AudioToolbox.framework */; };
+		1A2B3C4D5E6F789001234634 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F789001234748 /* CoreAudio.framework */; };
+		B1B2C3D4E5F6078901234590 /* AudioInputTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6078901234591 /* AudioInputTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B1B2C3D4E5F6078901234503 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1A2B3C4D5E6F789001234567 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1A2B3C4D5E6F789001234568;
+			remoteInfo = WisprLocal;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		1A2B3C4D5E6F789001234700 /* WisprLocalApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WisprLocalApp.swift; sourceTree = "<group>"; };
@@ -56,9 +107,60 @@
 		1A2B3C4D5E6F789001234722 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		1A2B3C4D5E6F789001234723 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		1A2B3C4D5E6F789001234724 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
+		1A2B3C4D5E6F789001234740 /* NaturalLanguage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NaturalLanguage.framework; path = System/Library/Frameworks/NaturalLanguage.framework; sourceTree = SDKROOT; };
+		1A2B3C4D5E6F789001234741 /* HistoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryModels.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234742 /* HistoryController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryController.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234743 /* SetupModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupModels.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234744 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234745 /* AudioInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioInputController.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234746 /* MicrophoneInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneInputView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234747 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		1A2B3C4D5E6F789001234748 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		1A2B3C4D5E6F789001234749 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123474A /* LocalSigning.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = LocalSigning.xcconfig.example; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234725 /* SnippetExpander.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetExpander.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234726 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234727 /* SnippetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetsView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234728 /* DictionaryEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryEngine.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234729 /* DictionaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123472A /* OutputCommandParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputCommandParser.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123472B /* TransformModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformModels.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123472C /* SelectedTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedTextEditor.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123472D /* TransformController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformController.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123472E /* TransformDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformDiff.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123472F /* TransformsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformsView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234734 /* TransformStatusWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformStatusWindow.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234735 /* CommandModeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandModeModels.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234736 /* CommandModeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandModeController.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234737 /* CommandStatusWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandStatusWindow.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234738 /* ScratchpadModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScratchpadModels.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F789001234739 /* ScratchpadEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScratchpadEditor.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123473A /* ScratchpadController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScratchpadController.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123473B /* ScratchpadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScratchpadView.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123473C /* ScratchpadWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScratchpadWindowController.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123473D /* StyleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleModels.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F78900123473E /* StyleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleView.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234501 /* WisprLocalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WisprLocalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1B2C3D4E5F6078901234502 /* SnippetExpanderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetExpanderTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234511 /* DictionaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234521 /* OutputPipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputPipelineTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234531 /* TransformTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234541 /* CommandModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandModeTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234551 /* ScratchpadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScratchpadTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234561 /* StyleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234571 /* HistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234581 /* SetupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupTests.swift; sourceTree = "<group>"; };
+		B1B2C3D4E5F6078901234591 /* AudioInputTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioInputTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B1B2C3D4E5F6078901234504 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		1A2B3C4D5E6F78900123456E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -68,6 +170,9 @@
 				1A2B3C4D5E6F789001234612 /* AVFoundation.framework in Frameworks */,
 				1A2B3C4D5E6F789001234613 /* Carbon.framework in Frameworks */,
 				1A2B3C4D5E6F789001234614 /* ApplicationServices.framework in Frameworks */,
+				1A2B3C4D5E6F78900123462B /* NaturalLanguage.framework in Frameworks */,
+				1A2B3C4D5E6F789001234633 /* AudioToolbox.framework in Frameworks */,
+				1A2B3C4D5E6F789001234634 /* CoreAudio.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,16 +182,28 @@
 		1A2B3C4D5E6F789001234569 = {
 			isa = PBXGroup;
 			children = (
+				1A2B3C4D5E6F789001234574 /* Config */,
 				1A2B3C4D5E6F78900123456B /* WisprLocal */,
+				B1B2C3D4E5F6078901234505 /* WisprLocalTests */,
 				1A2B3C4D5E6F78900123456C /* Frameworks */,
 				1A2B3C4D5E6F78900123456A /* Products */,
 			);
+				sourceTree = "<group>";
+		};
+		1A2B3C4D5E6F789001234574 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				1A2B3C4D5E6F789001234749 /* Signing.xcconfig */,
+				1A2B3C4D5E6F78900123474A /* LocalSigning.xcconfig.example */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		1A2B3C4D5E6F78900123456A /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				1A2B3C4D5E6F789001234710 /* WisprLocal.app */,
+				B1B2C3D4E5F6078901234501 /* WisprLocalTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -112,6 +229,34 @@
 				1A2B3C4D5E6F78900123470B /* HUDWindow.swift */,
 				1A2B3C4D5E6F78900123470C /* SettingsView.swift */,
 				1A2B3C4D5E6F78900123470F /* SettingsWindowController.swift */,
+				1A2B3C4D5E6F789001234725 /* SnippetExpander.swift */,
+				1A2B3C4D5E6F789001234726 /* HubView.swift */,
+				1A2B3C4D5E6F789001234727 /* SnippetsView.swift */,
+				1A2B3C4D5E6F789001234728 /* DictionaryEngine.swift */,
+				1A2B3C4D5E6F789001234729 /* DictionaryView.swift */,
+				1A2B3C4D5E6F78900123472A /* OutputCommandParser.swift */,
+				1A2B3C4D5E6F78900123472B /* TransformModels.swift */,
+				1A2B3C4D5E6F78900123472C /* SelectedTextEditor.swift */,
+				1A2B3C4D5E6F78900123472D /* TransformController.swift */,
+				1A2B3C4D5E6F78900123472E /* TransformDiff.swift */,
+				1A2B3C4D5E6F78900123472F /* TransformsView.swift */,
+				1A2B3C4D5E6F789001234734 /* TransformStatusWindow.swift */,
+				1A2B3C4D5E6F789001234735 /* CommandModeModels.swift */,
+				1A2B3C4D5E6F789001234736 /* CommandModeController.swift */,
+				1A2B3C4D5E6F789001234737 /* CommandStatusWindow.swift */,
+				1A2B3C4D5E6F789001234738 /* ScratchpadModels.swift */,
+				1A2B3C4D5E6F789001234739 /* ScratchpadEditor.swift */,
+				1A2B3C4D5E6F78900123473A /* ScratchpadController.swift */,
+				1A2B3C4D5E6F78900123473B /* ScratchpadView.swift */,
+				1A2B3C4D5E6F78900123473C /* ScratchpadWindowController.swift */,
+				1A2B3C4D5E6F78900123473D /* StyleModels.swift */,
+				1A2B3C4D5E6F78900123473E /* StyleView.swift */,
+				1A2B3C4D5E6F789001234741 /* HistoryModels.swift */,
+				1A2B3C4D5E6F789001234742 /* HistoryController.swift */,
+				1A2B3C4D5E6F789001234743 /* SetupModels.swift */,
+				1A2B3C4D5E6F789001234744 /* SetupView.swift */,
+				1A2B3C4D5E6F789001234745 /* AudioInputController.swift */,
+				1A2B3C4D5E6F789001234746 /* MicrophoneInputView.swift */,
 			);
 			path = WisprLocal;
 			sourceTree = "<group>";
@@ -124,13 +269,51 @@
 				1A2B3C4D5E6F789001234722 /* AVFoundation.framework */,
 				1A2B3C4D5E6F789001234723 /* Carbon.framework */,
 				1A2B3C4D5E6F789001234724 /* ApplicationServices.framework */,
+				1A2B3C4D5E6F789001234740 /* NaturalLanguage.framework */,
+				1A2B3C4D5E6F789001234747 /* AudioToolbox.framework */,
+				1A2B3C4D5E6F789001234748 /* CoreAudio.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B1B2C3D4E5F6078901234505 /* WisprLocalTests */ = {
+			isa = PBXGroup;
+			children = (
+				B1B2C3D4E5F6078901234502 /* SnippetExpanderTests.swift */,
+				B1B2C3D4E5F6078901234511 /* DictionaryTests.swift */,
+				B1B2C3D4E5F6078901234521 /* OutputPipelineTests.swift */,
+				B1B2C3D4E5F6078901234531 /* TransformTests.swift */,
+				B1B2C3D4E5F6078901234541 /* CommandModeTests.swift */,
+				B1B2C3D4E5F6078901234551 /* ScratchpadTests.swift */,
+				B1B2C3D4E5F6078901234561 /* StyleTests.swift */,
+				B1B2C3D4E5F6078901234571 /* HistoryTests.swift */,
+				B1B2C3D4E5F6078901234581 /* SetupTests.swift */,
+				B1B2C3D4E5F6078901234591 /* AudioInputTests.swift */,
+			);
+			path = WisprLocalTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B1B2C3D4E5F6078901234506 /* WisprLocalTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B1B2C3D4E5F6078901234507 /* Build configuration list for PBXNativeTarget "WisprLocalTests" */;
+			buildPhases = (
+				B1B2C3D4E5F6078901234508 /* Sources */,
+				B1B2C3D4E5F6078901234504 /* Frameworks */,
+				B1B2C3D4E5F6078901234509 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B1B2C3D4E5F607890123450A /* PBXTargetDependency */,
+			);
+			name = WisprLocalTests;
+			productName = WisprLocalTests;
+			productReference = B1B2C3D4E5F6078901234501 /* WisprLocalTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		1A2B3C4D5E6F789001234568 /* WisprLocal */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1A2B3C4D5E6F789001234580 /* Build configuration list for PBXNativeTarget "WisprLocal" */;
@@ -161,6 +344,10 @@
 					1A2B3C4D5E6F789001234568 = {
 						CreatedOnToolsVersion = 15.0;
 					};
+					B1B2C3D4E5F6078901234506 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 1A2B3C4D5E6F789001234568;
+					};
 				};
 			};
 			buildConfigurationList = 1A2B3C4D5E6F789001234581 /* Build configuration list for PBXProject "WisprLocal" */;
@@ -176,11 +363,19 @@
 			projectRoot = "";
 			targets = (
 				1A2B3C4D5E6F789001234568 /* WisprLocal */,
+				B1B2C3D4E5F6078901234506 /* WisprLocalTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		B1B2C3D4E5F6078901234509 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		1A2B3C4D5E6F78900123456F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -192,6 +387,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B1B2C3D4E5F6078901234508 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1B2C3D4E5F6078901234500 /* SnippetExpanderTests.swift in Sources */,
+				B1B2C3D4E5F6078901234510 /* DictionaryTests.swift in Sources */,
+				B1B2C3D4E5F6078901234520 /* OutputPipelineTests.swift in Sources */,
+				B1B2C3D4E5F6078901234530 /* TransformTests.swift in Sources */,
+				B1B2C3D4E5F6078901234540 /* CommandModeTests.swift in Sources */,
+				B1B2C3D4E5F6078901234550 /* ScratchpadTests.swift in Sources */,
+				B1B2C3D4E5F6078901234560 /* StyleTests.swift in Sources */,
+				B1B2C3D4E5F6078901234570 /* HistoryTests.swift in Sources */,
+				B1B2C3D4E5F6078901234580 /* SetupTests.swift in Sources */,
+				B1B2C3D4E5F6078901234590 /* AudioInputTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		1A2B3C4D5E6F78900123456D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -212,19 +424,84 @@
 				1A2B3C4D5E6F78900123460B /* HUDWindow.swift in Sources */,
 				1A2B3C4D5E6F78900123460C /* SettingsView.swift in Sources */,
 				1A2B3C4D5E6F78900123460E /* SettingsWindowController.swift in Sources */,
+				1A2B3C4D5E6F789001234615 /* SnippetExpander.swift in Sources */,
+				1A2B3C4D5E6F789001234616 /* HubView.swift in Sources */,
+				1A2B3C4D5E6F789001234617 /* SnippetsView.swift in Sources */,
+				1A2B3C4D5E6F789001234618 /* DictionaryEngine.swift in Sources */,
+				1A2B3C4D5E6F789001234619 /* DictionaryView.swift in Sources */,
+				1A2B3C4D5E6F78900123461A /* OutputCommandParser.swift in Sources */,
+				1A2B3C4D5E6F78900123461B /* TransformModels.swift in Sources */,
+				1A2B3C4D5E6F78900123461C /* SelectedTextEditor.swift in Sources */,
+				1A2B3C4D5E6F78900123461D /* TransformController.swift in Sources */,
+				1A2B3C4D5E6F78900123461E /* TransformDiff.swift in Sources */,
+				1A2B3C4D5E6F78900123461F /* TransformsView.swift in Sources */,
+				1A2B3C4D5E6F789001234620 /* TransformStatusWindow.swift in Sources */,
+				1A2B3C4D5E6F789001234621 /* CommandModeModels.swift in Sources */,
+				1A2B3C4D5E6F789001234622 /* CommandModeController.swift in Sources */,
+				1A2B3C4D5E6F789001234623 /* CommandStatusWindow.swift in Sources */,
+				1A2B3C4D5E6F789001234624 /* ScratchpadModels.swift in Sources */,
+				1A2B3C4D5E6F789001234625 /* ScratchpadEditor.swift in Sources */,
+				1A2B3C4D5E6F789001234626 /* ScratchpadController.swift in Sources */,
+				1A2B3C4D5E6F789001234627 /* ScratchpadView.swift in Sources */,
+				1A2B3C4D5E6F789001234628 /* ScratchpadWindowController.swift in Sources */,
+				1A2B3C4D5E6F789001234629 /* StyleModels.swift in Sources */,
+				1A2B3C4D5E6F78900123462A /* StyleView.swift in Sources */,
+				1A2B3C4D5E6F78900123462C /* HistoryModels.swift in Sources */,
+				1A2B3C4D5E6F78900123462D /* HistoryController.swift in Sources */,
+				1A2B3C4D5E6F78900123462E /* SetupModels.swift in Sources */,
+				1A2B3C4D5E6F78900123462F /* SetupView.swift in Sources */,
+				1A2B3C4D5E6F789001234630 /* AudioInputController.swift in Sources */,
+				1A2B3C4D5E6F789001234631 /* MicrophoneInputView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		B1B2C3D4E5F607890123450A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1A2B3C4D5E6F789001234568 /* WisprLocal */;
+			targetProxy = B1B2C3D4E5F6078901234503 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
-		1A2B3C4D5E6F789001234590 /* Debug */ = {
+		B1B2C3D4E5F607890123450B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.WisprLocalTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WisprLocal.app/Contents/MacOS/WisprLocal";
+			};
+			name = Debug;
+		};
+		B1B2C3D4E5F607890123450C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.WisprLocalTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WisprLocal.app/Contents/MacOS/WisprLocal";
+			};
+			name = Release;
+		};
+		1A2B3C4D5E6F789001234590 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1A2B3C4D5E6F789001234749 /* Signing.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = "$(WISPRLOCAL_DEVELOPMENT_TEAM)";
 				INFOPLIST_FILE = WisprLocal/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -241,11 +518,11 @@
 		};
 		1A2B3C4D5E6F789001234591 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1A2B3C4D5E6F789001234749 /* Signing.xcconfig */;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = "$(WISPRLOCAL_DEVELOPMENT_TEAM)";
 				INFOPLIST_FILE = WisprLocal/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -373,6 +650,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		B1B2C3D4E5F6078901234507 /* Build configuration list for PBXNativeTarget "WisprLocalTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1B2C3D4E5F607890123450B /* Debug */,
+				B1B2C3D4E5F607890123450C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		1A2B3C4D5E6F789001234580 /* Build configuration list for PBXNativeTarget "WisprLocal" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
